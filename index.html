@@ -11,8 +11,8 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Dream Interpreter">
-    <link rel="apple-touch-icon" href="logho.png">
+    <meta name="apple-mobile-web-app-title" content="স্বপ্ন শাস্ত্র">
+    <link rel="apple-touch-icon" href="/icon-192.png">
 
     <!-- SEO -->
     <meta name="description" content="AI দিয়ে আপনার স্বপ্নের অর্থ জানুন — সনাতন ও ইসলামিক শাস্ত্র অনুযায়ী">
@@ -351,7 +351,7 @@
 <body>
 
 <!-- Offline Bar -->
-<div id="offline-bar">📵 অফলাইন — স্বপ্ন বিশ্লেষণের জন্য ইন্টারনেট প্রয়োজন</div>
+<div id="offline-bar">📵Offline — Internet connection required for dream interpretation</div>
 
 <!-- Install Modal (Android/Desktop) -->
 <div id="install-modal">
@@ -415,7 +415,7 @@
             <div class="si">🗑️</div>
             <div class="st">
                 <h4 style="color:var(--danger)">Clear All History</h4>
-                <p>সব chat মুছে ফেলুন</p>
+                <p>Delete all chat history?</p>
             </div>
         </div>
         <button class="fp-close" onclick="hideFP('fp-settings')">✕ Close</button>
@@ -426,7 +426,7 @@
 <div class="fp" id="fp-theme">
     <div class="fp-box">
         <div class="fp-title">🎨 Choose Theme</div>
-        <div class="fp-sub">আপনার পছন্দের থিম বেছে নিন</div>
+        <div class="fp-sub">Choose Your Preferred Theme</div>
         <div class="th-row">
             <div class="th-opt" id="tl" onclick="setTheme('light')">
                 <div class="ti">☀️</div><div class="tn">Light</div>
@@ -661,7 +661,7 @@ async function send() {
     if (!text) return;
 
     if (!navigator.onLine) {
-        alert('আপনি offline আছেন। ইন্টারনেট সংযোগ চেক করুন।');
+        alert('You are offline. Please check your internet connection.');
         return;
     }
 
@@ -673,7 +673,7 @@ async function send() {
     sending = true;
     saveMsg('user', text);
 
-    const aiEl = addMsg('ai', '<span class="typing">স্বপ্ন বিশ্লেষণ করা হচ্ছে ✨</span>');
+    const aiEl = addMsg('ai', '<span class="typing">Analyzing your dream... ✨</span>');
 
     try {
         const controller = new AbortController();
@@ -700,8 +700,8 @@ async function send() {
 
     } catch (e) {
         const msg = e.name === 'AbortError'
-            ? 'সময় শেষ হয়ে গেছে। আবার চেষ্টা করুন।'
-            : e.message || 'অজানা ত্রুটি';
+            ? 'Request timed out. Please try again.'
+            : e.message || 'Unknown error';
         aiEl.innerHTML = `<em style="color:var(--danger)">⚠️ ${msg}</em>`;
     }
 
@@ -827,4 +827,4 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 </body>
-</html>
+    </html>
