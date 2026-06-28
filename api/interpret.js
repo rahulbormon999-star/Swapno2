@@ -1,124 +1,151 @@
-// Rate limiting — memory-based (Vercel serverless এ প্রতি instance আলাদা)
-const rateLimitMap = new Map();
-
+// ── Per-IP rate limit ─────────────────────────────────────
+const ipMap = new Map();
 function isRateLimited(ip) {
     const now = Date.now();
-    const windowMs = 60 * 1000; // 1 minute
-    const maxRequests = 10; // প্রতি মিনিটে ১০টি request per IP
-
-    if (!rateLimitMap.has(ip)) {
-        rateLimitMap.set(ip, { count: 1, start: now });
-        return false;
-    }
-
-    const data = rateLimitMap.get(ip);
-    if (now - data.start > windowMs) {
-        rateLimitMap.set(ip, { count: 1, start: now });
-        return false;
-    }
-
-    if (data.count >= maxRequests) return true;
-    data.count++;
+    const WINDOW = 60_000;
+    const MAX = 15;
+    const d = ipMap.get(ip);
+    if (!d || now - d.start > WINDOW) { ipMap.set(ip, { count: 1, start: now }); return false; }
+    if (d.count >= MAX) return true;
+    d.count++;
     return false;
 }
+setInterval(() => {
+    const now = Date.now();
+    for (const [k, v] of ipMap.entries()) if (now - v.start > 120_000) ipMap.delete(k);
+}, 120_000);
 
+// ── System Prompts ────────────────────────────────────────
+const SYSTEM_SANATAN = `আপনি একজন অভিজ্ঞ সনাতন স্বপ্নশাস্ত্র বিশেষজ্ঞ। আপনার কাজ স্বপ্ন বিশ্লেষণ করা।
+
+গুরুত্বপূর্ণ নিয়ম:
+- সর্বদা বাংলায় উত্তর দিবেন
+- ইউজারের আগের স্বপ্নগুলো মনে রেখে নতুন স্বপ্নের সাথে মিলিয়ে বিশ্লেষণ করবেন
+- কখনো উত্তর অসম্পূর্ণ রাখবেন না
+- ভয় বা কুসংস্কার ছড়াবেন না
+- ভবিষ্যদ্বাণী সম্ভাব্য হিসেবে উপস্থাপন করবেন
+
+প্রতিটি উত্তর ঠিক এই কাঠামোতে দিবেন:
+
+🌙 **স্বপ্নের অর্থ**
+(২-৩ লাইনে সংক্ষেপে মূল অর্থ বলুন)
+
+📖 **শাস্ত্র কী বলে**
+(সনাতন শাস্ত্র, পুরাণ বা উপনিষদ অনুযায়ী ২-৩ লাইনে সংক্ষেপে বলুন। যদি আগের স্বপ্নের সাথে মিল থাকে তা উল্লেখ করুন)
+
+🔮 **আপনার জীবনে কী আসতে পারে**
+(বিস্তারিতভাবে বলুন — কাজ, সম্পর্ক, স্বাস্থ্য, অর্থনীতি, পরিবার — যেটা প্রাসঙ্গিক সেটা নিয়ে বিস্তারিত আলোচনা করুন। আগের স্বপ্নের pattern থাকলে তা উল্লেখ করুন)
+
+🙏 **এখন আপনার করণীয়**
+(বিস্তারিতভাবে বলুন — কোন পূজা, কোন মন্ত্র, কোন দান, কোন আচার পালন করবেন, কীভাবে করবেন, কতদিন করবেন — সব বিস্তারিত বলুন)
+
+📌 **উপসংহার**
+(২-৩ লাইনে সারমর্ম)
+
+❓ **আপনার জন্য কিছু প্রশ্ন**
+(স্বপ্নের বিষয়বস্তু অনুযায়ী ২-৩টি আকর্ষণীয় প্রশ্ন করুন যা ইউজারকে আরও জানতে উৎসাহিত করবে। যেমন: "এই স্বপ্নে কি আপনি ভয় পেয়েছিলেন নাকি আনন্দিত ছিলেন?", "স্বপ্নে কি রাত ছিল নাকি দিন?" ইত্যাদি)`;
+
+const SYSTEM_ISLAM = `আপনি একজন অভিজ্ঞ ইসলামিক স্বপ্ন বিশ্লেষক। আপনার কাজ স্বপ্ন বিশ্লেষণ করা।
+
+গুরুত্বপূর্ণ নিয়ম:
+- সর্বদা বাংলায় উত্তর দিবেন
+- ইউজারের আগের স্বপ্নগুলো মনে রেখে নতুন স্বপ্নের সাথে মিলিয়ে বিশ্লেষণ করবেন
+- কখনো উত্তর অসম্পূর্ণ রাখবেন না
+- ভয় বা কুসংস্কার ছড়াবেন না
+- ভবিষ্যদ্বাণী সম্ভাব্য হিসেবে উপস্থাপন করবেন
+
+প্রতিটি উত্তর ঠিক এই কাঠামোতে দিবেন:
+
+🌙 **স্বপ্নের অর্থ**
+(২-৩ লাইনে সংক্ষেপে মূল অর্থ বলুন)
+
+📖 **শাস্ত্র কী বলে**
+(ইসলামিক স্বপ্ন ব্যাখ্যার আলোকে ২-৩ লাইনে সংক্ষেপে বলুন। যদি আগের স্বপ্নের সাথে মিল থাকে তা উল্লেখ করুন)
+
+🔮 **আপনার জীবনে কী আসতে পারে**
+(বিস্তারিতভাবে বলুন — কাজ, সম্পর্ক, স্বাস্থ্য, অর্থনীতি, পরিবার — যেটা প্রাসঙ্গিক সেটা নিয়ে বিস্তারিত আলোচনা করুন। আগের স্বপ্নের pattern থাকলে তা উল্লেখ করুন)
+
+🙏 **এখন আপনার করণীয়**
+(বিস্তারিতভাবে বলুন — কোন দোয়া পড়বেন, কোন সুরা পড়বেন, কতবার পড়বেন, কখন পড়বেন, কী আমল করবেন, কী সদকা দেবেন — সব বিস্তারিত বলুন)
+
+📌 **উপসংহার**
+(২-৩ লাইনে সারমর্ম)
+
+❓ **আপনার জন্য কিছু প্রশ্ন**
+(স্বপ্নের বিষয়বস্তু অনুযায়ী ২-৩টি আকর্ষণীয় প্রশ্ন করুন যা ইউজারকে আরও জানতে উৎসাহিত করবে। যেমন: "এই স্বপ্নটি কি রাতের কোন সময়ে দেখেছেন?", "স্বপ্নে কি কোনো পরিচিত মুখ ছিল?" ইত্যাদি)`;
+
+// ── Main handler ──────────────────────────────────────────
 export default async function handler(req, res) {
-    // CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') return res.status(200).end();
-    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    if (req.method !== 'POST')   return res.status(405).json({ error: 'Method not allowed' });
 
-    // IP rate limit
-    const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
+    const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
+             || req.socket?.remoteAddress || 'unknown';
     if (isRateLimited(ip)) {
         return res.status(429).json({ error: 'অনেক বেশি request। ১ মিনিট পর আবার চেষ্টা করুন।' });
     }
 
-    // Input validation
-    const { dream, religion } = req.body || {};
-    if (!dream || typeof dream !== 'string') {
+    const { dream, religion, history } = req.body || {};
+
+    if (!dream || typeof dream !== 'string' || dream.trim().length < 3) {
         return res.status(400).json({ error: 'স্বপ্নের বর্ণনা প্রয়োজন' });
     }
     if (dream.length > 2000) {
-        return res.status(400).json({ error: 'স্বপ্নের বর্ণনা অনেক বড়। ২০০০ অক্ষরের মধ্যে লিখুন।' });
+        return res.status(400).json({ error: 'স্বপ্নের বর্ণনা ২০০০ অক্ষরের মধ্যে লিখুন।' });
     }
 
-    // ৩টি Groq API key
-    const API_KEYS = [
+    const KEYS = [
         process.env.GROQ_API_KEY_1,
         process.env.GROQ_API_KEY_2,
         process.env.GROQ_API_KEY_3,
     ].filter(Boolean);
 
-    if (API_KEYS.length === 0) {
-        return res.status(500).json({ error: 'Server configuration error' });
+    if (KEYS.length === 0) return res.status(500).json({ error: 'Server configuration error' });
+
+    // Random key দিয়ে শুরু — load balance
+    const start = Math.floor(Math.random() * KEYS.length);
+    const keys  = [...KEYS.slice(start), ...KEYS.slice(0, start)];
+
+    const systemPrompt = religion === 'islam' ? SYSTEM_ISLAM : SYSTEM_SANATAN;
+
+    // ── Conversation history build করো ───────────────────
+    // history = [{role:'user',text:'...'},{role:'ai',text:'...'}]
+    // শুধু শেষ ৬টি message পাঠাবো (৩ পেয়ার) — context রাখার জন্য
+    const messages = [{ role: 'system', content: systemPrompt }];
+
+    if (Array.isArray(history) && history.length > 0) {
+        const recent = history.slice(-6); // শেষ ৬টি
+        for (const msg of recent) {
+            if (msg.role === 'user') {
+                messages.push({ role: 'user', content: msg.text });
+            } else if (msg.role === 'ai') {
+                messages.push({ role: 'assistant', content: msg.text });
+            }
+        }
     }
 
-    const PROMPT_SANATAN = `আপনি একজন অভিজ্ঞ স্বপ্ন বিশ্লেষক ও সনাতন স্বপ্নশাস্ত্র বিশেষজ্ঞ।
-ব্যবহারকারীর স্বপ্ন বিশ্লেষণ করে বিস্তারিত ব্যাখ্যা দিন।
+    // নতুন স্বপ্ন যোগ করো
+    messages.push({ role: 'user', content: `স্বপ্ন: "${dream.trim()}"` });
 
-নিয়ম:
-- সর্বদা বাংলায় উত্তর দিবেন
-- উত্তর বিস্তারিত ও সহজবোধ্য হবে
-- কোনো স্বপ্ন উপেক্ষা করবেন না
-- প্রতিটি প্রতীক আলাদা করে বিশ্লেষণ করবেন
-- ভবিষ্যদ্বাণী শতভাগ নিশ্চিত বলবেন না
-- ভয় বা কুসংস্কার ছড়াবেন না
-- সনাতন স্বপ্নশাস্ত্র, পুরাণ, উপনিষদ বিবেচনা করুন
-- করণীয়তে পূজা, জপ, দান বা আধ্যাত্মিক পরামর্শ দিন
-
-উত্তরের কাঠামো:
-🌙 **স্বপ্নের সারাংশ**
-🔍 **বিস্তারিত বিশ্লেষণ**
-✨ **সম্ভাব্য ইঙ্গিত**
-🙏 **করণীয়**
-📌 **উপসংহার**`;
-
-    const PROMPT_ISLAM = `আপনি একজন অভিজ্ঞ ইসলামিক স্বপ্ন বিশ্লেষক ও স্বপ্নশাস্ত্র বিশেষজ্ঞ।
-ব্যবহারকারীর স্বপ্ন বিশ্লেষণ করে বিস্তারিত ব্যাখ্যা দিন।
-
-নিয়ম:
-- সর্বদা বাংলায় উত্তর দিবেন
-- উত্তর বিস্তারিত ও সহজবোধ্য হবে
-- কোনো স্বপ্ন উপেক্ষা করবেন না
-- প্রতিটি প্রতীক আলাদা করে বিশ্লেষণ করবেন
-- ভবিষ্যদ্বাণী শতভাগ নিশ্চিত বলবেন না
-- ভয় বা কুসংস্কার ছড়াবেন না
-- ইসলামিক স্বপ্ন ব্যাখ্যার ঐতিহ্য ব্যবহার করুন
-- করণীয়তে দোয়া, জিকির, ইস্তিগফার, সদকার পরামর্শ দিন
-- ভাষা ইসলামিক সংস্কৃতির সাথে সামঞ্জস্যপূর্ণ হবে
-
-উত্তরের কাঠামো:
-🌙 **স্বপ্নের সারাংশ**
-🔍 **বিস্তারিত বিশ্লেষণ**
-✨ **সম্ভাব্য ইঙ্গিত**
-🙏 **করণীয়**
-📌 **উপসংহার**`;
-
-    const systemPrompt = religion === 'islam' ? PROMPT_ISLAM : PROMPT_SANATAN;
-
-    // Key rotate করো
-    for (let i = 0; i < API_KEYS.length; i++) {
+    for (let i = 0; i < keys.length; i++) {
         try {
             const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 25000); // 25s timeout
+            const timeout = setTimeout(() => controller.abort(), 28000);
 
             const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${API_KEYS[i]}`
+                    'Authorization': `Bearer ${keys[i]}`
                 },
                 body: JSON.stringify({
                     model: 'llama-3.3-70b-versatile',
-                    messages: [
-                        { role: 'system', content: systemPrompt },
-                        { role: 'user', content: `স্বপ্ন: "${dream.trim()}"` }
-                    ],
-                    temperature: 0.75,
+                    messages,
+                    temperature: 0.8,
                     max_tokens: 3000
                 }),
                 signal: controller.signal
@@ -126,10 +153,7 @@ export default async function handler(req, res) {
 
             clearTimeout(timeout);
 
-            if (groqRes.status === 429 || groqRes.status === 503) {
-                // Rate limit বা overload — পরের key try করো
-                continue;
-            }
+            if (groqRes.status === 429 || groqRes.status === 503) continue;
 
             if (!groqRes.ok) {
                 const err = await groqRes.json().catch(() => ({}));
@@ -137,23 +161,20 @@ export default async function handler(req, res) {
             }
 
             const data = await groqRes.json();
-            const text = data?.choices?.[0]?.message?.content;
-            if (!text) throw new Error('Empty response from AI');
+            const text = data?.choices?.[0]?.message?.content?.trim();
+            if (!text) throw new Error('Empty response');
 
             return res.status(200).json({ text });
 
         } catch (e) {
             if (e.name === 'AbortError') {
-                if (i === API_KEYS.length - 1) {
-                    return res.status(504).json({ error: 'AI সার্ভার সময়মতো সাড়া দেয়নি। আবার চেষ্টা করুন।' });
-                }
-                continue;
+                if (i < keys.length - 1) continue;
+                return res.status(504).json({ error: 'AI সার্ভার সময়মতো সাড়া দেয়নি। আবার চেষ্টা করুন।' });
             }
-            if (i === API_KEYS.length - 1) {
-                return res.status(500).json({ error: `AI ত্রুটি: ${e.message}` });
-            }
+            if (i < keys.length - 1) continue;
+            return res.status(500).json({ error: `AI ত্রুটি: ${e.message}` });
         }
     }
 
     return res.status(429).json({ error: 'সব API key এর limit শেষ। কিছুক্ষণ পর আবার চেষ্টা করুন।' });
-         }
+}
