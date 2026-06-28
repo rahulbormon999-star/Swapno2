@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>স্বপ্ন শাস্ত্র - AI Dream Interpreter</title>
+    <title>Dream Interpreter - AI Dream Interpreter</title>
 
     <!-- PWA Meta -->
     <link rel="manifest" href="/manifest.json">
@@ -11,7 +11,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="স্বপ্ন শাস্ত্র">
+    <meta name="apple-mobile-web-app-title" content="Dream Interpreter">
     <link rel="apple-touch-icon" href="logho.png">
 
     <!-- SEO -->
@@ -470,14 +470,14 @@
             <div class="chat-inner" id="chat-inner">
                 <div class="welcome">
                     <div class="logo" id="cl">🕉️</div>
-                    <h3>আপনার স্বপ্নের অর্থ জানুন</h3>
-                    <p>নিচে আপনার স্বপ্নের কথা বিস্তারিত লিখুন</p>
+                    <h3>Discover the Meaning of Your Dreams</h3>
+                    <p>Describe Your Dream Below</p>
                 </div>
             </div>
         </div>
         <div id="inp-wrap">
             <div class="inp-box">
-                <textarea id="ti" placeholder="আপনার স্বপ্নের কথা লিখুন..." rows="1"
+                <textarea id="ti" placeholder="Describe your dream..." rows="1"
                     oninput="ar(this)" onkeypress="ke(event)"></textarea>
                 <button id="send-btn" onclick="send()">
                     <i class="fa-solid fa-arrow-up"></i>
@@ -802,8 +802,8 @@ function newChat() {
     const lg = rel === 'sanatan' ? '🕉️' : '☪️';
     chatInner.innerHTML = `<div class="welcome">
         <div class="logo" id="cl">${lg}</div>
-        <h3>আপনার স্বপ্নের অর্থ জানুন</h3>
-        <p>নিচে আপনার স্বপ্নের কথা বিস্তারিত লিখুন</p>
+        <h3>Discover the Meaning of Your Dreams</h3>
+        <p>Describe Your Dream Below</p>
     </div>`;
     closeSB(); renderHist();
 }
