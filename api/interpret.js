@@ -119,7 +119,7 @@ export default async function handler(req, res) {
                         { role: 'user', content: `স্বপ্ন: "${dream.trim()}"` }
                     ],
                     temperature: 0.75,
-                    max_tokens: 1500
+                    max_tokens: 3000
                 }),
                 signal: controller.signal
             });
