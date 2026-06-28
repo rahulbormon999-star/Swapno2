@@ -1,4 +1,4 @@
-const CACHE = 'swapno-v2';
+const CACHE = 'swapno-v3';
 const STATIC = [
     '/',
     '/index.html',
