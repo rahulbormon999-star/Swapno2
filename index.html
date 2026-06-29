@@ -541,33 +541,28 @@ function isInStandaloneMode() {
     return window.matchMedia('(display-mode: standalone)').matches
         || window.navigator.standalone === true;
 }
-function wasInstalled() {
-    return localStorage.getItem('sw2_installed') === '1';
-}
-function markInstalled() {
-    localStorage.setItem('sw2_installed', '1');
-}
 
 function checkInstallPrompt() {
-    // যদি ইতিমধ্যে install করা থাকে — কিছুই দেখাবে না
+
+    // যদি install করা অবস্থায় চালু হয়
     if (isInStandaloneMode()) {
-        markInstalled();
         return;
     }
-    // iOS
-    if (isIOS() && !wasInstalled()) {
+
+    // iPhone Safari
+    if (isIOS()) {
         setTimeout(() => {
             document.getElementById('ios-guide').classList.add('show');
         }, 1500);
-        return;
     }
-    // Android/Desktop — beforeinstallprompt event এ দেখাবে
-}
+    }
 
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
+
     deferredPrompt = e;
-    if (!isInStandaloneMode() && !wasInstalled()) {
+
+    if (!isInStandaloneMode()) {
         setTimeout(() => {
             document.getElementById('install-modal').classList.add('show');
         }, 1500);
@@ -575,17 +570,8 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 
 window.addEventListener('appinstalled', () => {
-    markInstalled();
     document.getElementById('install-modal').classList.remove('show');
     deferredPrompt = null;
-});
-
-// uninstall detection — যখন standalone mode শেষ হয় এবং আবার browser-এ আসে
-window.matchMedia('(display-mode: standalone)').addEventListener('change', (e) => {
-    if (!e.matches) {
-        // standalone mode শেষ মানে uninstall হয়েছে
-        localStorage.removeItem('sw2_installed');
-    }
 });
 
 async function doInstall() {
