@@ -7,7 +7,7 @@
 
     <!-- PWA Meta -->
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#7c5cbf">
+    <meta name="theme-color" content="#ffffff" id="theme-color-meta">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -137,7 +137,7 @@
             flex-shrink: 0; gap: 10px;
         }
         .menu-btn {
-            background: none; border: none; font-size: 20px; cursor: pointer;
+            background: none; border: solid 1px #000; font-size: 20px; cursor: pointer;
             color: var(--sub); flex-shrink: 0; padding: 4px;
         }
         #hdr {
@@ -193,10 +193,10 @@
         }
         textarea::placeholder { color: var(--sub); }
         #send-btn {
-            background: var(--accent); color: #fff; border: none;
+            background: #0ff; color: #000; border: none;
             width: 36px; height: 36px; border-radius: 10px; margin: 4px 3px;
             cursor: pointer; display: flex; align-items: center;
-            justify-content: center; font-size: 15px; flex-shrink: 0; transition: .2s;
+            justify-content: center; font-size: 40px; flex-shrink: 0; transition: .2s;
         }
         #send-btn:hover { background: var(--accent-h); }
         #send-btn:disabled { background: #bbb; cursor: not-allowed; }
@@ -456,14 +456,14 @@
         </div>
         <div id="hl"></div>
         <div class="set-btn" onclick="openSettings()">
-            <i class="fa-solid fa-gear"></i> Settings
+            ⚙️ Settings
         </div>
     </div>
 
     <!-- Main -->
     <div id="main">
         <div id="topbar">
-            <button class="menu-btn" onclick="openSB()"><i class="fa-solid fa-bars"></i></button>
+            <button class="menu-btn" onclick="openSB()">☰</button>
             <span id="hdr">🕉️ Swapno Shastra (Traditional)</span>
         </div>
         <div id="chat">
@@ -480,7 +480,7 @@
                 <textarea id="ti" placeholder="Describe your dream..." rows="1"
                     oninput="ar(this)" onkeypress="ke(event)"></textarea>
                 <button id="send-btn" onclick="send()">
-                    <i class="fa-solid fa-arrow-up"></i>
+                    ⇑
                 </button>
             </div>
         </div>
@@ -618,10 +618,21 @@ function scrollBot() {
 function setTheme(t) {
     theme = t;
     try { localStorage.setItem('sw2_theme', t); } catch(e) {}
+
     document.documentElement.setAttribute('data-theme', t);
+
     document.getElementById('tl').classList.toggle('on', t === 'light');
     document.getElementById('td').classList.toggle('on', t === 'dark');
-}
+
+    // Status bar color
+    const meta = document.querySelector('meta[name="theme-color"]');
+
+    if (t === 'dark') {
+        meta.setAttribute('content', '#13131f');
+    } else {
+        meta.setAttribute('content', '#ffffff');
+    }
+    }
 
 // ── Religion ──────────────────────────────────────────────
 function setRel(r) {
