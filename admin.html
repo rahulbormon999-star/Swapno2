@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>স্বপ্ন শাস্ত্র — Admin Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Noto Sans Bengali',sans-serif; }
+body { background:#0f0f1a; color:#e6e6f0; min-height:100vh; }
+
+/* ── Login Screen ── */
+#login-screen {
+    display:flex; align-items:center; justify-content:center;
+    min-height:100vh; padding:20px;
+}
+.login-box {
+    background:#1a1a2e; border-radius:20px; padding:40px 30px;
+    width:100%; max-width:380px; text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,.4);
+}
+.login-box .logo { font-size:52px; margin-bottom:16px; }
+.login-box h2 { font-size:20px; font-weight:700; margin-bottom:6px; color:#e6e6f0; }
+.login-box p { font-size:13px; color:#888; margin-bottom:28px; }
+.login-input {
+    width:100%; padding:13px 16px; background:#23233a; border:1.5px solid #2a2a40;
+    border-radius:12px; color:#e6e6f0; font-size:15px; outline:none;
+    font-family:'Noto Sans Bengali',sans-serif; margin-bottom:14px;
+    transition: border-color .2s;
+}
+.login-input:focus { border-color:#7c5cbf; }
+.login-btn {
+    width:100%; padding:13px; background:#7c5cbf; color:#fff; border:none;
+    border-radius:12px; font-size:16px; font-weight:700; cursor:pointer;
+    font-family:'Noto Sans Bengali',sans-serif; transition:.2s;
+}
+.login-btn:hover { background:#9b7fd4; }
+.login-err { color:#e74c3c; font-size:13px; margin-top:10px; min-height:20px; }
+
+/* ── Dashboard ── */
+#dashboard { display:none; padding:20px; max-width:1200px; margin:0 auto; }
+.dash-header {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:24px; flex-wrap:wrap; gap:12px;
+}
+.dash-header h1 { font-size:22px; font-weight:700; }
+.dash-header .sub { font-size:13px; color:#888; margin-top:3px; }
+.refresh-btn {
+    padding:9px 18px; background:#7c5cbf; color:#fff; border:none;
+    border-radius:10px; cursor:pointer; font-size:14px; font-weight:600;
+    font-family:'Noto Sans Bengali',sans-serif;
+}
+.refresh-btn:hover { background:#9b7fd4; }
+
+/* ── Stat Cards ── */
+.cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-bottom:24px; }
+.card {
+    background:#1a1a2e; border-radius:16px; padding:20px 16px;
+    border:1px solid #2a2a40; text-align:center;
+}
+.card .icon { font-size:28px; margin-bottom:8px; }
+.card .val { font-size:28px; font-weight:700; color:#7c5cbf; margin-bottom:4px; }
+.card .lbl { font-size:12px; color:#888; }
+.card.today { border-color:#7c5cbf33; background:#1e1a30; }
+
+/* ── Tab ── */
+.tabs { display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
+.tab {
+    padding:8px 18px; border-radius:8px; cursor:pointer; font-size:14px;
+    font-weight:600; border:1.5px solid #2a2a40; color:#888;
+    background:transparent; font-family:'Noto Sans Bengali',sans-serif;
+    transition:.2s;
+}
+.tab.on { background:#7c5cbf; color:#fff; border-color:#7c5cbf; }
+
+/* ── Charts ── */
+.charts { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:18px; margin-bottom:24px; }
+.chart-box {
+    background:#1a1a2e; border-radius:16px; padding:20px;
+    border:1px solid #2a2a40;
+}
+.chart-box h3 { font-size:15px; font-weight:700; margin-bottom:16px; color:#e6e6f0; }
+.chart-wrap { position:relative; height:220px; }
+
+/* ── Religion Split ── */
+.rel-split { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:24px; }
+.rel-card {
+    background:#1a1a2e; border-radius:16px; padding:20px;
+    border:1px solid #2a2a40; text-align:center;
+}
+.rel-card .ri { font-size:36px; margin-bottom:8px; }
+.rel-card .rv { font-size:24px; font-weight:700; margin-bottom:4px; }
+.rel-card .rl { font-size:13px; color:#888; }
+.rel-card .rp { font-size:13px; color:#7c5cbf; margin-top:4px; font-weight:600; }
+
+/* ── Loading ── */
+#loading {
+    display:none; position:fixed; inset:0; background:rgba(15,15,26,.8);
+    align-items:center; justify-content:center; z-index:999; flex-direction:column; gap:14px;
+}
+#loading.show { display:flex; }
+.spinner {
+    width:40px; height:40px; border:4px solid #2a2a40;
+    border-top-color:#7c5cbf; border-radius:50%;
+    animation:spin .8s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* ── Footer ── */
+.footer { text-align:center; padding:20px; color:#555; font-size:13px; }
+
+@media(max-width:480px) {
+    .cards { grid-template-columns:repeat(2,1fr); }
+    .charts { grid-template-columns:1fr; }
+    .rel-split { grid-template-columns:1fr 1fr; }
+    .dash-header h1 { font-size:18px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loading">
+    <div class="spinner"></div>
+    <div style="color:#888;font-size:14px">Data লোড হচ্ছে...</div>
+</div>
+
+<!-- Login -->
+<div id="login-screen">
+    <div class="login-box">
+        <div class="logo">🌙</div>
+        <h2>Admin Dashboard</h2>
+        <p>স্বপ্ন শাস্ত্র — Analytics Panel</p>
+        <input type="password" class="login-input" id="key-input"
+            placeholder="Secret Key দিন..." onkeypress="if(event.key==='Enter')login()">
+        <button class="login-btn" onclick="login()">🔐 প্রবেশ করুন</button>
+        <div class="login-err" id="login-err"></div>
+    </div>
+</div>
+
+<!-- Dashboard -->
+<div id="dashboard">
+    <div class="dash-header">
+        <div>
+            <h1>📊 Analytics Dashboard</h1>
+            <div class="sub" id="last-updated">Loading...</div>
+        </div>
+        <button class="refresh-btn" onclick="loadData()">🔄 Refresh</button>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="cards">
+        <div class="card today">
+            <div class="icon">🔍</div>
+            <div class="val" id="today-searches">—</div>
+            <div class="lbl">আজকের সার্চ</div>
+        </div>
+        <div class="card today">
+            <div class="icon">👤</div>
+            <div class="val" id="today-visitors">—</div>
+            <div class="lbl">আজকের ইউজার</div>
+        </div>
+        <div class="card today">
+            <div class="icon">🔤</div>
+            <div class="val" id="today-tokens">—</div>
+            <div class="lbl">আজকের Token</div>
+        </div>
+        <div class="card">
+            <div class="icon">📈</div>
+            <div class="val" id="total-searches">—</div>
+            <div class="lbl">মোট সার্চ</div>
+        </div>
+        <div class="card">
+            <div class="icon">🌐</div>
+            <div class="val" id="total-visitors">—</div>
+            <div class="lbl">মোট ইউজার</div>
+        </div>
+        <div class="card">
+            <div class="icon">💎</div>
+            <div class="val" id="total-tokens">—</div>
+            <div class="lbl">মোট Token</div>
+        </div>
+    </div>
+
+    <!-- Religion Split -->
+    <div class="rel-split">
+        <div class="rel-card">
+            <div class="ri">🕉️</div>
+            <div class="rv" id="sanatan-count">—</div>
+            <div class="rl">সনাতন সার্চ</div>
+            <div class="rp" id="sanatan-pct">—%</div>
+        </div>
+        <div class="rel-card">
+            <div class="ri">☪️</div>
+            <div class="rv" id="islam-count">—</div>
+            <div class="rl">ইসলামিক সার্চ</div>
+            <div class="rp" id="islam-pct">—%</div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab on" onclick="switchTab('daily')">দৈনিক (৩০ দিন)</button>
+        <button class="tab" onclick="switchTab('monthly')">মাসিক</button>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts" id="chart-area">
+        <div class="chart-box">
+            <h3>🔍 সার্চ সংখ্যা</h3>
+            <div class="chart-wrap"><canvas id="search-chart"></canvas></div>
+        </div>
+        <div class="chart-box">
+            <h3>👤 ইউজার সংখ্যা</h3>
+            <div class="chart-wrap"><canvas id="visitor-chart"></canvas></div>
+        </div>
+        <div class="chart-box" style="grid-column:1/-1">
+            <h3>🔤 Token খরচ</h3>
+            <div class="chart-wrap"><canvas id="token-chart"></canvas></div>
+        </div>
+    </div>
+
+    <div class="footer">স্বপ্ন শাস্ত্র Admin Panel — শুধুমাত্র আপনার জন্য 🔒</div>
+</div>
+
+<script>
+let adminKey = '';
+let statsData = null;
+let currentTab = 'daily';
+let charts = {};
+
+function login() {
+    const key = document.getElementById('key-input').value.trim();
+    if (!key) { showErr('Secret Key দিন'); return; }
+    adminKey = key;
+    loadData();
+}
+
+function showErr(msg) {
+    document.getElementById('login-err').textContent = msg;
+    setTimeout(() => document.getElementById('login-err').textContent = '', 3000);
+}
+
+function fmt(n) {
+    n = parseInt(n) || 0;
+    if (n >= 1_000_000) return (n/1_000_000).toFixed(1) + 'M';
+    if (n >= 1_000)     return (n/1_000).toFixed(1) + 'K';
+    return n.toString();
+}
+
+function shortDate(d) {
+    const parts = d.split('-');
+    return parts[2] + '/' + parts[1];
+}
+
+async function loadData() {
+    document.getElementById('loading').classList.add('show');
+    try {
+        const r = await fetch('/api/admin', {
+            headers: { 'x-admin-key': adminKey }
+        });
+        if (r.status === 401) {
+            document.getElementById('loading').classList.remove('show');
+            showErr('Secret Key ভুল!');
+            return;
+        }
+        if (!r.ok) throw new Error('Server error');
+
+        statsData = await r.json();
+
+        // Show dashboard
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+
+        updateCards();
+        renderCharts();
+
+        const t = new Date(statsData.summary.generatedAt);
+        document.getElementById('last-updated').textContent =
+            `সর্বশেষ আপডেট: ${t.toLocaleTimeString('bn-BD')}`;
+
+    } catch (e) {
+        showErr('Data লোড করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
+    }
+    document.getElementById('loading').classList.remove('show');
+}
+
+function updateCards() {
+    const s = statsData.summary;
+    document.getElementById('today-searches').textContent  = fmt(s.todaySearches);
+    document.getElementById('today-visitors').textContent  = fmt(s.todayVisitors);
+    document.getElementById('today-tokens').textContent    = fmt(s.todayTokens);
+    document.getElementById('total-searches').textContent  = fmt(s.totalSearches);
+    document.getElementById('total-visitors').textContent  = fmt(s.totalVisitors);
+    document.getElementById('total-tokens').textContent    = fmt(s.totalTokens);
+
+    const total = s.sanatonSearches + s.islamSearches || 1;
+    document.getElementById('sanatan-count').textContent = fmt(s.sanatonSearches);
+    document.getElementById('islam-count').textContent   = fmt(s.islamSearches);
+    document.getElementById('sanatan-pct').textContent   = Math.round(s.sanatonSearches/total*100) + '%';
+    document.getElementById('islam-pct').textContent     = Math.round(s.islamSearches/total*100) + '%';
+}
+
+function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+    event.target.classList.add('on');
+    renderCharts();
+}
+
+function destroyCharts() {
+    Object.values(charts).forEach(c => c?.destroy());
+    charts = {};
+}
+
+function makeChart(id, type, labels, datasets) {
+    const ctx = document.getElementById(id).getContext('2d');
+    return new Chart(ctx, {
+        type,
+        data: { labels, datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1a1a2e',
+                    borderColor: '#7c5cbf',
+                    borderWidth: 1,
+                    titleColor: '#e6e6f0',
+                    bodyColor: '#e6e6f0',
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: '#666', font: { size: 11 } },
+                    grid:  { color: '#1e1e32' }
+                },
+                y: {
+                    ticks: { color: '#666', font: { size: 11 } },
+                    grid:  { color: '#1e1e32' },
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+function renderCharts() {
+    destroyCharts();
+    if (!statsData) return;
+
+    let labels, searches, visitors, tokens;
+
+    if (currentTab === 'daily') {
+        const d = statsData.daily;
+        labels   = d.searches.map(x => shortDate(x.date));
+        searches = d.searches.map(x => x.count);
+        visitors = d.visitors.map(x => x.visitors);
+        tokens   = d.tokens.map(x => x.tokens);
+    } else {
+        const m = statsData.monthly;
+        labels   = m.searches.map(x => x.month);
+        searches = m.searches.map(x => x.count);
+        visitors = new Array(m.searches.length).fill(0);
+        tokens   = m.tokens.map(x => x.tokens);
+    }
+
+    const grad = (ctx, c1, c2) => {
+        const g = ctx.createLinearGradient(0, 0, 0, 220);
+        g.addColorStop(0, c1); g.addColorStop(1, c2); return g;
+    };
+
+    // Search chart
+    const sCtx = document.getElementById('search-chart').getContext('2d');
+    charts.search = makeChart('search-chart', 'bar', labels, [{
+        data: searches,
+        backgroundColor: grad(sCtx, 'rgba(124,92,191,.8)', 'rgba(124,92,191,.1)'),
+        borderRadius: 6, borderSkipped: false
+    }]);
+
+    // Visitor chart
+    const vCtx = document.getElementById('visitor-chart').getContext('2d');
+    charts.visitor = makeChart('visitor-chart', 'bar', labels, [{
+        data: visitors,
+        backgroundColor: grad(vCtx, 'rgba(0,210,150,.8)', 'rgba(0,210,150,.1)'),
+        borderRadius: 6, borderSkipped: false
+    }]);
+
+    // Token chart
+    const tCtx = document.getElementById('token-chart').getContext('2d');
+    charts.token = new Chart(tCtx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                data: tokens,
+                borderColor: '#f39c12',
+                backgroundColor: 'rgba(243,156,18,.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#f39c12',
+                pointRadius: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { color: '#666', font: { size: 11 } }, grid: { color: '#1e1e32' } },
+                y: { ticks: { color: '#666', font: { size: 11 } }, grid: { color: '#1e1e32' }, beginAtZero: true }
+            }
+        }
+    });
+}
+
+// Enter key
+document.getElementById('key-input').addEventListener('keypress', e => {
+    if (e.key === 'Enter') login();
+});
+</script>
+</body>
+              </html>
