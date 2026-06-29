@@ -136,10 +136,32 @@
             background: var(--bg); border-bottom: 1px solid var(--border);
             flex-shrink: 0; gap: 10px;
         }
-        .menu-btn {
-            background: none; border: solid 1px #000; font-size: 20px; cursor: pointer;
-            color: var(--sub); flex-shrink: 0; padding: 4px;
-        }
+        .menu-btn{
+    width:35px;
+    height:35px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--card);
+    color:var(--text);
+    border:1.5px solid var(--border);
+    border-radius:12px;
+    font-size:20px;
+    cursor:pointer;
+    flex-shrink:0;
+    transition:all .25s ease;
+    box-shadow:0 2px 8px rgba(0,0,0,.08);
+}
+
+.menu-btn:hover{
+    background:var(--accent);
+    color:#fff;
+    border-color:var(--accent);
+}
+
+.menu-btn:active{
+    transform:scale(.95);
+}
         #hdr {
             font-size: clamp(14px, 4vw, 17px); font-weight: 700;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
