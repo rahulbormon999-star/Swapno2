@@ -33,8 +33,8 @@
             --inp: #ffffff;
             --card: #ffffff;
             --scard: #f3f3f3;
-            --accent: #7c5cbf;
-            --accent-h: #9b7fd4;
+            --accent: #2aabeb;
+            --accent-h: #60cce4;
             --danger: #e74c3c;
             --font: 'Noto Sans Bengali', sans-serif;
             --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -215,7 +215,8 @@
         }
         textarea::placeholder { color: var(--sub); }
         #send-btn {
-            background: #0ff; color: #000; border: none;
+            background:var(--card); color:var(--text);   border:1.5px solid var(--border);
+             transition:all .25s ease; box-shadow:0 2px 8px rgba(0,0,0,.08);
             width: 36px; height: 36px; border-radius: 10px; margin: 4px 3px;
             cursor: pointer; display: flex; align-items: center;
             justify-content: center; font-size: 40px; flex-shrink: 0; transition: .2s;
