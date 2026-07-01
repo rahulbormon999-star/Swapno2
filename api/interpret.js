@@ -1,4 +1,4 @@
-import { APP_KNOWLEDGE_BASE } from './info.js'; // info.js ফাইলটি এখানে যুক্ত করা হলো
+import { APP_KNOWLEDGE_BASE } from '.api/info.js'; // info.js ফাইলটি এখানে যুক্ত করা হলো
 
 // ── Per-IP rate limit ─────────────────────────────────────
 const ipMap = new Map();
