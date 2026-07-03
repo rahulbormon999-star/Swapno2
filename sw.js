@@ -1,4 +1,4 @@
-const CACHE_NAME = "swapno-shastra-v11";
+const CACHE_NAME = "swapno-shastra-v12";
 
 const FILES_TO_CACHE = [
   "/",
