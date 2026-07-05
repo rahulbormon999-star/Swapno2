@@ -747,7 +747,10 @@ function typewrite(text, el) {
             while (i < f.length && f[i] !== '>') g += f[i++];
             g += '>'; i++; el.innerHTML += g;
         } else { el.innerHTML += f[i++]; }
-        scrollBot();
+
+        if (nearBottom) {
+            chatEl.scrollTop = chatEl.scrollHeight;
+        }
         setTimeout(t, 6);
     }
     t();
