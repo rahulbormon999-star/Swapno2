@@ -179,7 +179,7 @@ export default async function handler(req, res) {
                     model: 'llama-3.3-70b-versatile',
                     messages,
                     temperature: 0.7, // আরও প্রাসঙ্গিক উত্তরের জন্য টেম্পারেচার সামান্য কমানো হলো
-                    max_tokens: 800 // টোকেন অপটিমাইজ করার জন্য আউটপুট লিমিট কমানো হলো
+                    max_tokens: 2500 // টোকেন অপটিমাইজ করার জন্য আউটপুট লিমিট কমানো হলো
                 }),
                 signal: controller.signal
             });
