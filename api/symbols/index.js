@@ -1,9 +1,9 @@
 // ── সব ক্যাটেগরির প্রতীক একসাথে + matching helper ─────────────
 import { BIRDS } from './birds.js';
 import { ANIMALS } from './animals.js';
-import { HUMAN_ISSUES } from './human_issues.js';
-import { DIVINE_BEINGS } from './divine_beings.js';
-import { ACTION_SEMANTICS } from './action_semantics.js';
+import { HUMAN_ISSUES } from './human-issues.js';
+import { DIVINE_BEINGS } from './divine-beings.js';
+import { ACTION_SEMANTICS } from './action-semantics.js';
 
 export const ALL_SYMBOLS = [...BIRDS, ...ANIMALS, ...HUMAN_ISSUES, ...DIVINE_BEINGS];
 export { ACTION_SEMANTICS };
@@ -51,4 +51,4 @@ ${lines.join('\n')}
 সাধারণ action-অর্থ নির্দেশিকা (প্রতীকের polarity অনুযায়ী প্রয়োগ করো, প্রাসঙ্গিক হলেই ব্যবহার করো):
 ${actionLines}
 `;
-                                                                              }
+}
