@@ -1,4 +1,5 @@
 import { APP_KNOWLEDGE_BASE } from './info.js'; // info.js ফাইলটি এখানে যুক্ত করা হলো
+import { findMatchedSymbols, buildContextBlock } from './symbols/index.js'; // প্রতীক-ডেটাবেজ (RAG)
 
 // ── Per-IP rate limit ─────────────────────────────────────
 const ipMap = new Map();
@@ -112,6 +113,9 @@ const SYSTEM_PROMPT = `আপনি একজন অভিজ্ঞ স্বপ
 ২. সাধারণ স্বপ্ন বিষয়ক প্রশ্ন (যেমন: স্বপ্ন কী, কেন দেখি): এগুলোকে বৈজ্ঞানিক দৃষ্টিকোণ থেকে সংক্ষেপে ও সুন্দরভাবে বুঝিয়ে বলুন, কোনো ধর্মীয় রেফারেন্স ছাড়াই।
 ৩. অবান্তর প্রশ্ন (স্বপ্নের বাইরের বিষয়): অন্য কোনো বিষয় জিজ্ঞাসা করলে অত্যন্ত সংক্ষেপে বলুন: "দুঃখিত, আমার নির্মাতা রাহুল দেব আমাকে স্বপ্নের অর্থ ব্যাখ্যা ও স্বপ্ন সংক্রান্ত বিষয় ছাড়া অন্য বিষয়ের উত্তর বা সমস্যার সমাধান করার অনুমতি দেননি।"
 ৪. ধর্মীয় উৎস সম্পর্কে সরাসরি প্রশ্ন করলে (যেমন: "এই ব্যাখ্যা কোন শাস্ত্র অনুযায়ী?"): বলবেন "এই ব্যাখ্যা প্রচলিত স্বপ্ন-বিশ্লেষণ ও মনস্তাত্ত্বিক দৃষ্টিভঙ্গির উপর ভিত্তি করে তৈরি, নির্দিষ্ট কোনো একক উৎস অনুসরণ করা হয় না।"
+৫. দেবতার নাম উল্লেখ: ইউজার নিজে যদি স্বপ্নে কোনো নির্দিষ্ট দেবতা/দেবীর নাম উল্লেখ করেন (যেমন "আমি বিষ্ণুকে দেখলাম"), আপনি সেই নামটি ব্যবহার করে উত্তর দিতে পারবেন (যেহেতু ইউজার নিজেই নামটি এনেছেন)। তবে কোনো নির্দিষ্ট শাস্ত্র/পুরাণ থেকে উদ্ধৃতি, রেফারেন্স বা কর্তৃত্বমূলক দাবি করবেন না — ব্যাখ্যা সবসময় মনস্তাত্ত্বিক ও প্রতীকী স্তরে (archetypal অর্থে) রাখুন। ইউজার নিজে কোনো নাম না বললে, নিজে থেকে কোনো দেবতার নাম আনবেন না — তখন "দিব্য অস্তিত্ব" জাতীয় সাধারণ ভাষা ব্যবহার করুন।
+
+নিচে যদি "প্রতীক রেফারেন্স তথ্য" দেওয়া থাকে, সেটাকে আপনার ব্যাখ্যার মূল ভিত্তি হিসেবে ব্যবহার করুন (নিজের সাধারণ জ্ঞানের বদলে) — তবে তথ্যটি হুবহু কপি না করে, প্রশ্নে বর্ণিত নির্দিষ্ট স্বপ্নের সাথে মিলিয়ে নিজের ভাষায় লিখুন। প্রতীক রেফারেন্স না থাকলে, আপনার নিজের সাধারণ জ্ঞান দিয়েই উত্তর দিন।
 
 ${APP_KNOWLEDGE_BASE}`;
 
@@ -152,6 +156,11 @@ export default async function handler(req, res) {
     const start = Math.floor(Math.random() * KEYS.length);
     const keys  = [...KEYS.slice(start), ...KEYS.slice(0, start)];
 
+    // ── RAG: প্রতীক-ডেটাবেজ থেকে match করা তথ্য বের করা ──────
+    const dreamTrimmed = dream.trim();
+    const matchedSymbols = findMatchedSymbols(dreamTrimmed);
+    const contextBlock = buildContextBlock(matchedSymbols);
+
     // Conversation history build করো
     const messages = [{ role: 'system', content: SYSTEM_PROMPT }];
     if (Array.isArray(history) && history.length > 0) {
@@ -161,7 +170,12 @@ export default async function handler(req, res) {
             else if (msg.role === 'ai') messages.push({ role: 'assistant', content: msg.text });
         }
     }
-    messages.push({ role: 'user', content: dream.trim() });
+
+    // contextBlock থাকলে সেটা user message-এর সাথে জুড়ে পাঠানো হচ্ছে (RAG)
+    const userContent = contextBlock
+        ? `${contextBlock}\nইউজারের স্বপ্ন: "${dreamTrimmed}"`
+        : dreamTrimmed;
+    messages.push({ role: 'user', content: userContent });
 
     // Visitor track (async)
     trackVisitor(ip).catch(() => {});
@@ -219,4 +233,4 @@ export default async function handler(req, res) {
     }
 
     return res.status(429).json({ error: 'সব API key এর limit শেষ। কিছুক্ষণ পর আবার চেষ্টা করুন।' });
-        }
+    }
