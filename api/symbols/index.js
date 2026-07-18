@@ -22,7 +22,8 @@ export function findMatchedSymbols(dreamText) {
 }
 
 // matched প্রতীকগুলো থেকে Groq prompt-এ পাঠানোর জন্য একটা readable context block বানায়
-export function buildContextBlock(matchedSymbols) {
+// dreamText দিয়ে ফিল্টার করা হয় যাতে শুধু প্রাসঙ্গিক action-semantics পাঠানো হয় (টোকেন বাঁচাতে)
+export function buildContextBlock(matchedSymbols, dreamText = '') {
     if (!matchedSymbols.length) return '';
 
     const lines = matchedSymbols.map(s => {
@@ -38,17 +39,23 @@ export function buildContextBlock(matchedSymbols) {
         return line;
     });
 
-    const actionLines = Object.entries(ACTION_SEMANTICS)
-        .map(([action, meanings]) =>
-            `- "${action}" → positive প্রতীকে: ${meanings.positive} | negative প্রতীকে: ${meanings.negative} | neutral প্রতীকে: ${meanings.neutral}`
-        ).join('\n');
+    // শুধু dreamText-এ keyword মিলে যাওয়া action-গুলোই ফিল্টার করে নেওয়া হচ্ছে (টোকেন বাঁচাতে)
+    const text = dreamText.toLowerCase();
+    const relevantActions = ACTION_SEMANTICS.filter(a =>
+        a.keywords.some(k => text.includes(k.toLowerCase()))
+    );
+
+    const actionLines = relevantActions
+        .map(a => `- "${a.label}" → positive প্রতীকে: ${a.positive} | negative প্রতীকে: ${a.negative} | neutral প্রতীকে: ${a.neutral}`)
+        .join('\n');
+
+    const actionSection = relevantActions.length > 0
+        ? `\nসাধারণ action-অর্থ নির্দেশিকা (প্রতীকের polarity অনুযায়ী প্রয়োগ করো):\n${actionLines}\n`
+        : '';
 
     return `নিচে ইউজারের স্বপ্নে পাওয়া প্রতীকের রেফারেন্স তথ্য দেওয়া হলো (নিজের ভাষায় ব্যবহার করো, হুবহু কপি না করে):
 
 মিলে যাওয়া প্রতীক:
 ${lines.join('\n')}
-
-সাধারণ action-অর্থ নির্দেশিকা (প্রতীকের polarity অনুযায়ী প্রয়োগ করো, প্রাসঙ্গিক হলেই ব্যবহার করো):
-${actionLines}
-`;
+${actionSection}`;
 }
