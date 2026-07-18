@@ -210,57 +210,70 @@ export default async function handler(req, res) {
     // Visitor track (async)
     trackVisitor(ip).catch(() => {});
 
+    // প্রাইমারি মডেল দিয়ে সব key চেষ্টা করা হচ্ছে
     for (let i = 0; i < keys.length; i++) {
         try {
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 28000);
+            const result = await callGroq(keys[i], 'llama-3.3-70b-versatile', messages, 1400, 28000);
+            if (result.retry) continue; // 429/503 হলে পরের key
+            if (result.error) throw result.error;
 
-            const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${keys[i]}`
-                },
-                body: JSON.stringify({
-                    model: 'llama-3.3-70b-versatile',
-                    messages,
-                    temperature: 0.7, // আরও প্রাসঙ্গিক উত্তরের জন্য টেম্পারেচার সামান্য কমানো হলো
-                    max_tokens: 1500 // history truncation যোগ হওয়ায় এখানে কিছুটা কমানো হলো, TPM safety margin রাখতে
-                }),
-                signal: controller.signal
-            });
-
-            clearTimeout(timeout);
-
-            if (groqRes.status === 429 || groqRes.status === 503) continue;
-
-            if (!groqRes.ok) {
-                const err = await groqRes.json().catch(() => ({}));
-                throw new Error(err?.error?.message || `Groq error ${groqRes.status}`);
-            }
-
-            const data = await groqRes.json();
-            const text = data?.choices?.[0]?.message?.content?.trim();
-            if (!text) throw new Error('Empty response');
-
-            // Stats সেভ করো (async)
-            const usage = data.usage || {};
-            saveStats(
-                usage.prompt_tokens || 0,
-                usage.completion_tokens || 0
-            ).catch(() => {});
-
-            return res.status(200).json({ text });
+            saveStats(result.usage.prompt_tokens || 0, result.usage.completion_tokens || 0).catch(() => {});
+            return res.status(200).json({ text: result.text });
 
         } catch (e) {
-            if (e.name === 'AbortError') {
-                if (i < keys.length - 1) continue;
-                return res.status(504).json({ error: 'AI সার্ভার সময়মতো সাড়া দেয়নি। আবার চেষ্টা করুন।' });
-            }
             if (i < keys.length - 1) continue;
-            return res.status(500).json({ error: `AI ত্রুটি: ${e.message}` });
+            // সব key প্রাইমারি মডেলে fail করলে, নিচে fallback মডেল চেষ্টা করা হবে (loop থেকে বের হয়ে)
         }
     }
 
-    return res.status(429).json({ error: 'সব API key এর limit শেষ। কিছুক্ষণ পর আবার চেষ্টা করুন।' });
-                 }
+    // ── Fallback: llama-3.3-70b organization-wide TPM লিমিটে আটকালে,
+    // আলাদা/হালকা মডেলে (আলাদা TPM বাজেট) একবার চেষ্টা করা হচ্ছে — যাতে ইউজার raw error না দেখেন
+    try {
+        const fallback = await callGroq(keys[0], 'llama-3.1-8b-instant', messages, 1200, 20000);
+        if (!fallback.retry && !fallback.error) {
+            saveStats(fallback.usage.prompt_tokens || 0, fallback.usage.completion_tokens || 0).catch(() => {});
+            return res.status(200).json({ text: fallback.text });
+        }
+    } catch (e) { /* নিচের generic error-এ পড়বে */ }
+
+    return res.status(429).json({ error: 'AI সার্ভার এই মুহূর্তে ব্যস্ত আছে। কিছুক্ষণ পর আবার চেষ্টা করুন।' });
+}
+
+// একটা single Groq API call করার helper — key/model/timeout প্যারামিটার হিসেবে নেয়
+async function callGroq(apiKey, model, messages, maxTokens, timeoutMs) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model,
+                messages,
+                temperature: 0.7,
+                max_tokens: maxTokens
+            }),
+            signal: controller.signal
+        });
+        clearTimeout(timeout);
+
+        if (groqRes.status === 429 || groqRes.status === 503) return { retry: true };
+
+        if (!groqRes.ok) {
+            const err = await groqRes.json().catch(() => ({}));
+            return { error: new Error(err?.error?.message || `Groq error ${groqRes.status}`) };
+        }
+
+        const data = await groqRes.json();
+        const text = data?.choices?.[0]?.message?.content?.trim();
+        if (!text) return { error: new Error('Empty response') };
+
+        return { text, usage: data.usage || {} };
+    } catch (e) {
+        clearTimeout(timeout);
+        return { error: e };
+    }
+}
