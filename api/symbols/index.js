@@ -1,62 +1,85 @@
-// ── সব ক্যাটেগরির প্রতীক একসাথে + matching helper ─────────────
-import { BIRDS } from './birds.js';
-import { ANIMALS } from './animals.js';
-import { HUMAN_ISSUES } from './human-issues.js';
-import { DIVINE_BEINGS } from './divine-beings.js';
-import { VEHICLES } from './vehicles.js';
-import { ACTION_SEMANTICS } from './action-semantics.js';
+// ── যানবাহন সম্পর্কিত স্বপ্ন-প্রতীক ──────────────────────────
+// schema: symbol, aliases[], core_meaning, polarity (positive/negative/neutral), modifiers{} (ঐচ্ছিক)
 
-export const ALL_SYMBOLS = [...BIRDS, ...ANIMALS, ...HUMAN_ISSUES, ...DIVINE_BEINGS, ...VEHICLES];
-export { ACTION_SEMANTICS };
-
-// dream টেক্সট থেকে match হওয়া প্রতীকগুলো খুঁজে বের করে (সহজ keyword matching)
-export function findMatchedSymbols(dreamText) {
-    const text = dreamText.toLowerCase();
-    const matched = [];
-
-    for (const entry of ALL_SYMBOLS) {
-        const namesToCheck = [entry.symbol, ...(entry.aliases || [])];
-        const isMatch = namesToCheck.some(name => name && text.includes(name.toLowerCase()));
-        if (isMatch) matched.push(entry);
+export const VEHICLES = [
+  {
+    symbol: "গাড়ি",
+    aliases: ["কার", "প্রাইভেট কার"],
+    core_meaning: "জীবনের নিয়ন্ত্রণ, স্বাধীনতা বা এগিয়ে চলার গতির প্রতীক — কে চালাচ্ছে তা নিজের জীবনের নিয়ন্ত্রণ কার হাতে সেটার ইঙ্গিত দিতে পারে।",
+    polarity: "positive",
+    modifiers: {
+      "নিজে চালানো": "নিজের জীবনের সিদ্ধান্ত নিজে নেওয়ার আত্মবিশ্বাস",
+      "অন্য কেউ চালাচ্ছে": "জীবনের কোনো ক্ষেত্রে নিয়ন্ত্রণ অন্যের হাতে ছেড়ে দেওয়ার অনুভূতি",
+      "ব্রেক কাজ না করা": "পরিস্থিতির ওপর নিয়ন্ত্রণ হারানোর গভীর উদ্বেগ"
     }
-    return matched;
-}
-
-// matched প্রতীকগুলো থেকে Groq prompt-এ পাঠানোর জন্য একটা readable context block বানায়
-// dreamText দিয়ে ফিল্টার করা হয় যাতে শুধু প্রাসঙ্গিক action-semantics পাঠানো হয় (টোকেন বাঁচাতে)
-export function buildContextBlock(matchedSymbols, dreamText = '') {
-    if (!matchedSymbols.length) return '';
-
-    const lines = matchedSymbols.map(s => {
-        let line = `- ${s.symbol} (polarity: ${s.polarity}): ${s.core_meaning}`;
-        if (s.companion_animal) {
-            line += `\n  সংশ্লিষ্ট সঙ্গী-প্রতীক — ${s.companion_animal.symbol}: ${s.companion_animal.meaning}`;
-        }
-        if (s.modifiers) {
-            const modLines = Object.entries(s.modifiers)
-                .map(([k, v]) => `  • ${k}: ${v}`).join('\n');
-            line += `\n  সম্ভাব্য variant:\n${modLines}`;
-        }
-        return line;
-    });
-
-    // শুধু dreamText-এ keyword মিলে যাওয়া action-গুলোই ফিল্টার করে নেওয়া হচ্ছে (টোকেন বাঁচাতে)
-    const text = dreamText.toLowerCase();
-    const relevantActions = ACTION_SEMANTICS.filter(a =>
-        a.keywords.some(k => text.includes(k.toLowerCase()))
-    );
-
-    const actionLines = relevantActions
-        .map(a => `- "${a.label}" → positive প্রতীকে: ${a.positive} | negative প্রতীকে: ${a.negative} | neutral প্রতীকে: ${a.neutral}`)
-        .join('\n');
-
-    const actionSection = relevantActions.length > 0
-        ? `\nসাধারণ action-অর্থ নির্দেশিকা (প্রতীকের polarity অনুযায়ী প্রয়োগ করো):\n${actionLines}\n`
-        : '';
-
-    return `নিচে ইউজারের স্বপ্নে পাওয়া প্রতীকের রেফারেন্স তথ্য দেওয়া হলো (নিজের ভাষায় ব্যবহার করো, হুবহু কপি না করে):
-
-মিলে যাওয়া প্রতীক:
-${lines.join('\n')}
-${actionSection}`;
-}
+  },
+  {
+    symbol: "বাস",
+    aliases: [],
+    core_meaning: "সমষ্টিগত যাত্রা, সামাজিক জীবন বা এমন কোনো পথ যেখানে একা নন — অনেকের সাথে একই দিকে এগোনোর প্রতীক।",
+    polarity: "neutral"
+  },
+  {
+    symbol: "ট্রেন",
+    aliases: ["রেলগাড়ি"],
+    core_meaning: "জীবনের নির্দিষ্ট, পূর্বনির্ধারিত পথ বা লক্ষ্যের দিকে ধারাবাহিক অগ্রগতির প্রতীক — ট্রেন miss করা ভবিষ্যতের সুযোগ হারানোর ভয় নির্দেশ করতে পারে।",
+    polarity: "neutral",
+    modifiers: {
+      "ট্রেন miss করা": "গুরুত্বপূর্ণ সুযোগ হাতছাড়া হওয়ার ভয়",
+      "সময়মতো ট্রেন ধরা": "লক্ষ্যের দিকে সঠিক সময়ে এগিয়ে যাওয়ার আত্মবিশ্বাস"
+    }
+  },
+  {
+    symbol: "বিমান",
+    aliases: ["প্লেন", "উড়োজাহাজ"],
+    core_meaning: "উচ্চাকাঙ্ক্ষা, বড় পরিবর্তন বা জীবনে নতুন উচ্চতায় পৌঁছানোর আকাঙ্ক্ষার প্রতীক।",
+    polarity: "positive",
+    modifiers: {
+      "বিমান বিধ্বস্ত হওয়া": "উচ্চাভিলাষী কোনো পরিকল্পনা ব্যর্থ হওয়ার গভীর ভয়",
+      "স্বাচ্ছন্দ্যে ওড়া": "লক্ষ্যের দিকে আত্মবিশ্বাসের সাথে এগিয়ে যাওয়া"
+    }
+  },
+  {
+    symbol: "নৌকা",
+    aliases: ["ডিঙি"],
+    core_meaning: "আবেগের মধ্য দিয়ে যাত্রা বা অনিশ্চিত, পরিবর্তনশীল কোনো পরিস্থিতিতে ভেসে চলার প্রতীক — পানির (আবেগের) সাথে সরাসরি সম্পর্কিত।",
+    polarity: "neutral",
+    modifiers: {
+      "শান্ত পানিতে নৌকা": "মানসিক প্রশান্তি ও স্থিতিশীলতা",
+      "উত্তাল পানিতে নৌকা": "আবেগের অস্থিরতা বা কঠিন পরিস্থিতির মধ্য দিয়ে যাওয়া"
+    }
+  },
+  {
+    symbol: "মোটরসাইকেল",
+    aliases: ["বাইক"],
+    core_meaning: "দ্রুত সিদ্ধান্ত, ঝুঁকি নেওয়ার মানসিকতা বা স্বাধীনভাবে নিজের পথ বেছে নেওয়ার প্রতীক।",
+    polarity: "positive"
+  },
+  {
+    symbol: "সাইকেল",
+    aliases: [],
+    core_meaning: "নিজের প্রচেষ্টায়, ধীরে কিন্তু স্থিরভাবে এগিয়ে চলার প্রতীক — নিজের শক্তির ওপর নির্ভরতা নির্দেশ করে।",
+    polarity: "positive"
+  },
+  {
+    symbol: "রিকশা",
+    aliases: [],
+    core_meaning: "পরিচিত, ধীরগতির কিন্তু নির্ভরযোগ্য পথচলার প্রতীক — তাড়াহুড়ো নেই এমন জীবনের একটি পর্যায়ের ইঙ্গিত।",
+    polarity: "neutral"
+  },
+  {
+    symbol: "অ্যাম্বুলেন্স",
+    aliases: [],
+    core_meaning: "জরুরি মনোযোগ প্রয়োজন এমন কোনো পরিস্থিতি বা সাহায্যের প্রয়োজনীয়তার প্রতীক — শারীরিক না হয়ে প্রায়ই মানসিক জরুরি অবস্থার ইঙ্গিত দেয়।",
+    polarity: "negative"
+  },
+  {
+    symbol: "জাহাজ",
+    aliases: ["স্টিমার"],
+    core_meaning: "জীবনের বড় যাত্রা, দীর্ঘমেয়াদী পরিকল্পনা বা বিশাল পরিবর্তনের প্রতীক।",
+    polarity: "positive",
+    modifiers: {
+      "জাহাজ ডুবে যাওয়া": "বড় কোনো পরিকল্পনা বা সম্পর্ক ভেঙে যাওয়ার গভীর ভয়"
+    }
+  }
+];
