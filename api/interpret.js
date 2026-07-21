@@ -151,6 +151,10 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'POST')   return res.status(405).json({ error: 'Method not allowed' });
 
+    // ── পুরো handler-টা try/catch দিয়ে মোড়ানো — যেকোনো জায়গায় এরর হলেই
+    // এখন সেটা ধরা পড়বে এবং সরাসরি চ্যাটে exact কারণ দেখানো হবে (Vercel log খোঁজার দরকার নেই)
+    try {
+
     const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
              || req.socket?.remoteAddress || 'unknown';
 
@@ -261,6 +265,15 @@ export default async function handler(req, res) {
     } catch (e) { /* নিচের generic error-এ পড়বে */ }
 
     return res.status(429).json({ error: 'AI সার্ভার এই মুহূর্তে ব্যস্ত আছে। কিছুক্ষণ পর আবার চেষ্টা করুন।' });
+
+    } catch (topLevelError) {
+        // এখানে ধরা পড়া যেকোনো এরর (import/parsing/RAG/classification — যেকোনো জায়গার)
+        // console.error দিয়ে Vercel log-এও যাবে, আর সরাসরি চ্যাটেও দেখা যাবে
+        console.error('Interpret handler error:', topLevelError);
+        return res.status(500).json({
+            error: `ডিবাগ এরর: ${topLevelError.message || 'অজানা এরর'} ${topLevelError.stack ? '| ' + topLevelError.stack.split('\n')[1]?.trim() : ''}`
+        });
+    }
 }
 
 // একটা single Groq API call করার helper — key/model/timeout প্যারামিটার হিসেবে নেয়
@@ -300,4 +313,4 @@ async function callGroq(apiKey, model, messages, maxTokens, timeoutMs) {
         clearTimeout(timeout);
         return { error: e };
     }
-            }
+        }
