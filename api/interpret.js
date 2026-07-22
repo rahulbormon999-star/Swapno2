@@ -123,18 +123,36 @@ function detectMissingContext(text) {
 }
 // dream টেক্সট + history দেখে ইনপুট-টাইপ কোডেই নির্ধারণ করা হয় — LLM-কে অনুমান করতে হয় না
 const NEW_DREAM_MARKERS = ['স্বপ্নে দেখলাম', 'স্বপ্ন দেখলাম', 'স্বপ্নে দেখি', 'স্বপ্ন দেখি', 'আমি দেখলাম যে', 'স্বপ্নটা ছিল', 'স্বপ্নে আমি'];
-const QUESTION_MARKERS = ['কিভাবে', 'কীভাবে', 'কেন', 'কী করব', 'কি করব', 'বুঝিয়ে বল', 'মানে কি', 'মানে কী', '?'];
+
+// বহু-শব্দের প্রশ্নবাচক বাক্যাংশ — substring match যথেষ্ট নিরাপদ (দুর্ঘটনাক্রমে অন্য শব্দের ভেতরে চলে আসার সম্ভাবনা কম)
+const QUESTION_PHRASES = ['কিভাবে', 'কীভাবে', 'কেন', 'কী করব', 'কি করব', 'বুঝিয়ে বল', 'মানে কি', 'মানে কী', 'আপনি কে', 'তুমি কে', 'তোমার নাম', 'আপনার নাম', 'কে তৈরি', 'কে বানা', 'নির্মাতা কে', '?'];
+
+// একক ছোট wh-word — এগুলো substring match করলে বিপজ্জনক (যেমন "কে" শব্দটা "তাকে"/"তোমাকে"-এর ভেতরেও থাকে),
+// তাই এখানে সম্পূর্ণ শব্দ মিলতে হবে (word-boundary check), শুধু অংশ মিললে চলবে না
+const QUESTION_WHOLE_WORDS = ['কে', 'কি', 'কী', 'কোথায়', 'কখন', 'কেমন'];
+
+// টেক্সটকে শব্দে ভেঙে exact match চেক করে (Bengali punctuation/স্পেস দিয়ে split)
+function containsWholeWord(text, word) {
+    const words = text.split(/[\s,।!?—–\-]+/).filter(Boolean);
+    return words.includes(word);
+}
+
+function looksLikeQuestionFn(t) {
+    if (QUESTION_PHRASES.some(p => t.includes(p))) return true;
+    if (QUESTION_WHOLE_WORDS.some(w => containsWholeWord(t, w))) return true;
+    return false;
+}
 
 function classifyInput(dreamText, contextQuestionAlreadyAsked) {
     const t = dreamText.trim();
     const wordCount = t.split(/\s+/).length;
     const looksLikeNewDream = NEW_DREAM_MARKERS.some(m => t.includes(m));
-    const looksLikeQuestion = QUESTION_MARKERS.some(m => t.includes(m));
+    const looksLikeQuestion = looksLikeQuestionFn(t);
 
     // নতুন স্বপ্নের marker সবচেয়ে বেশি অগ্রাধিকার পায়
     if (looksLikeNewDream) return 'new_dream'; // (ক)
     // এরপর প্রশ্নবাচক marker — এটা context_answer-এর আগে চেক করা জরুরি,
-    // নাহলে "কিভাবে আত্মবিশ্বাস বাড়াবো" জাতীয় স্পষ্ট প্রশ্নও ভুলভাবে context_answer হয়ে যায়
+    // নাহলে "আপনি কে" বা "কিভাবে আত্মবিশ্বাস বাড়াবো" জাতীয় স্পষ্ট প্রশ্নও ভুলভাবে context_answer/dream হয়ে যায়
     if (looksLikeQuestion) return 'general_question'; // (গ)
     // প্রশ্ন/নতুন-স্বপ্নের কোনো marker নেই, আগে context-প্রশ্ন হয়েছে, ছোট উত্তর — তাহলে context_answer
     if (contextQuestionAlreadyAsked && wordCount <= 25) return 'context_answer'; // (খ)
@@ -319,4 +337,4 @@ async function callGroq(apiKey, model, messages, maxTokens, timeoutMs) {
         clearTimeout(timeout);
         return { error: e };
     }
-                    }
+}
