@@ -2,10 +2,9 @@
 import { BIRDS } from './birds.js';
 import { ANIMALS } from './animals.js';
 import { HUMAN_ISSUES } from './human-issues.js';
-import { VEHICLES } from './vehicles.js';
 import { ACTION_SEMANTICS } from './action-semantics.js';
 
-export const ALL_SYMBOLS = [...BIRDS, ...ANIMALS, ...HUMAN_ISSUES, ...VEHICLES];
+export const ALL_SYMBOLS = [...BIRDS, ...ANIMALS, ...HUMAN_ISSUES];
 export { ACTION_SEMANTICS };
 
 // dream টেক্সট থেকে match হওয়া প্রতীকগুলো খুঁজে বের করে (সহজ keyword matching)
